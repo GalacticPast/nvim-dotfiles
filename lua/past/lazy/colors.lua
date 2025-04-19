@@ -19,14 +19,13 @@ return {
             show_eob = true,
             float_style = "bright",
             inlay_hints_background = "none",
-            on_highlights = function(highlight_groups, palette) end,
+            on_highlights = function(highlight_groups, palette)
+            end,
             colours_override = function(palette) end,
         })
         vim.cmd("colorscheme everforest")
     end,
 }
-
-
 
 
 --return {
