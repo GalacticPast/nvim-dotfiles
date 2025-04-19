@@ -1,7 +1,7 @@
 vim.opt.guicursor = ""
 vim.opt.nu = true
 vim.opt.relativenumber = true
-vim.opt.background = "dark"
+vim.opt.background = "light"
 vim.opt.tabstop = 4
 vim.opt.cursorline = true
 

@@ -1,31 +1,31 @@
-return {
-    "neanias/everforest-nvim",
-    version = false,
-    lazy = false,
-    priority = 1000,
-    config = function()
-        require("everforest").setup({
-            background = "hard",
-            transparent_background_level = 0,
-            italics = false,
-            disable_italic_comments = false,
-            sign_column_background = "none",
-            ui_contrast = "low",
-            dim_inactive_windows = false,
-            diagnostic_text_highlight = false,
-            diagnostic_virtual_text = "coloured",
-            diagnostic_line_highlight = false,
-            spell_foreground = false,
-            show_eob = true,
-            float_style = "bright",
-            inlay_hints_background = "none",
-            on_highlights = function(highlight_groups, palette)
-            end,
-            colours_override = function(palette) end,
-        })
-        vim.cmd("colorscheme everforest")
-    end,
-}
+--return {
+--    "neanias/everforest-nvim",
+--    version = false,
+--    lazy = false,
+--    priority = 1000,
+--    config = function()
+--        require("everforest").setup({
+--            background = "hard",
+--            transparent_background_level = 0,
+--            italics = false,
+--            disable_italic_comments = false,
+--            sign_column_background = "none",
+--            ui_contrast = "low",
+--            dim_inactive_windows = false,
+--            diagnostic_text_highlight = false,
+--            diagnostic_virtual_text = "coloured",
+--            diagnostic_line_highlight = false,
+--            spell_foreground = false,
+--            show_eob = true,
+--            float_style = "bright",
+--            inlay_hints_background = "none",
+--            on_highlights = function(highlight_groups, palette)
+--            end,
+--            colours_override = function(palette) end,
+--        })
+--        vim.cmd("colorscheme everforest")
+--    end,
+--}
 
 
 --return {
@@ -290,39 +290,39 @@ return {
 
 
 
---return {
---    "ellisonleao/gruvbox.nvim",
---    lazy = false,
---    priority = 1000,
---    config = function()
---        -- Default options:
---        require("gruvbox").setup({
---            terminal_colors = true, -- add neovim terminal colors
---            undercurl = true,
---            underline = true,
---            bold = false,
---            italic = {
---                strings = true,
---                emphasis = true,
---                comments = true,
---                operators = false,
---                folds = true,
---            },
---            strikethrough = true,
---            invert_selection = false,
---            invert_signs = false,
---            invert_tabline = false,
---            invert_intend_guides = false,
---            inverse = false, -- invert background for search, diffs, statuslines and errors
---            contrast = "",   -- can be "hard", "soft" or empty string
---            palette_overrides = {},
---            overrides = {},
---            dim_inactive = false,
---            transparent_mode = false,
---        })
---        vim.cmd("colorscheme gruvbox")
---    end,
---}
+return {
+    "ellisonleao/gruvbox.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function()
+        -- Default options:
+        require("gruvbox").setup({
+            terminal_colors = true, -- add neovim terminal colors
+            undercurl = true,
+            underline = true,
+            bold = false,
+            italic = {
+                strings = true,
+                emphasis = true,
+                comments = true,
+                operators = false,
+                folds = true,
+            },
+            strikethrough = true,
+            invert_selection = false,
+            invert_signs = false,
+            invert_tabline = false,
+            invert_intend_guides = false,
+            inverse = true, -- invert background for search, diffs, statuslines and errors
+            contrast = "soft",   -- can be "hard", "soft" or empty string
+            palette_overrides = {},
+            overrides = {},
+            dim_inactive = false,
+            transparent_mode = false,
+        })
+        vim.cmd("colorscheme gruvbox")
+    end,
+}
 
 --return {
 --    -- Lua
