@@ -6,9 +6,9 @@ require("past.lazy_init")
 local augroup = vim.api.nvim_create_augroup
 local pastGroup = augroup('PastGroup', {})
 
+
+
 local autocmd = vim.api.nvim_create_autocmd
-
-
 
 autocmd('LspAttach', {
     group = pastGroup,
