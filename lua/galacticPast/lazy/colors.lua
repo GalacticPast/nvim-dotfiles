@@ -1,9 +1,6 @@
 function ColorMyPencils(color)
-	color = color or "rose-pine-moon"
+	color = color
 	vim.cmd.colorscheme(color)
-
-	vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
-	vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
 end
 
 return {
@@ -17,24 +14,23 @@ return {
         lazy = false,
         opts = {},
         config = function()
-            ColorMyPencils()
         end
     },
     {
         "ellisonleao/gruvbox.nvim",
         name = "gruvbox",
         config = function()
-            require("gruvbox").setup({
+             require("gruvbox").setup({
                 terminal_colors = true, -- add neovim terminal colors
                 undercurl = true,
-                underline = false,
-                bold = true,
+                underline = true,
+                bold = false,
                 italic = {
-                    strings = false,
-                    emphasis = false,
-                    comments = false,
+                    strings = true,
+                    emphasis = true,
+                    comments = true,
                     operators = false,
-                    folds = false,
+                    folds = true,
                 },
                 strikethrough = true,
                 invert_selection = false,
@@ -42,12 +38,13 @@ return {
                 invert_tabline = false,
                 invert_intend_guides = false,
                 inverse = true, -- invert background for search, diffs, statuslines and errors
-                contrast = "", -- can be "hard", "soft" or empty string
+                contrast = "soft",   -- can be "hard", "soft" or empty string
                 palette_overrides = {},
                 overrides = {},
                 dim_inactive = false,
                 transparent_mode = false,
             })
+            ColorMyPencils("gruvbox")
         end,
     },
     {
@@ -69,6 +66,7 @@ return {
                     floats = "dark", -- style for floating windows
                 },
             })
+
         end
     },
 
@@ -77,13 +75,11 @@ return {
         name = "rose-pine",
         config = function()
             require('rose-pine').setup({
-                disable_background = true,
+                disable_background = false,
                 styles = {
                     italic = false,
                 },
             })
-
-            ColorMyPencils();
         end
     },
 
