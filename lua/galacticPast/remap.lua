@@ -74,13 +74,15 @@ vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><
 
 -- Build shortcuts
 if os == "windows" then
-    vim.keymap.set("n", "<leader>bd", "<C-w>v<cr>|<cmd>:term build-debug.bat<cr>i", { desc = "[B]uild [D]ebug" })
-    vim.keymap.set("n", "<leader>br", "<C-w>v<cr>|<cmd>:term build-release.bat<cr>i", { desc = "[B]uild [R]elease" })
+    vim.keymap.set("n", "<leader>bd", "<C-w>v<cr>|<cmd>:term build_debug.bat<cr>i", { desc = "[B]uild [D]ebug" })
+    vim.keymap.set("n", "<leader>br", "<C-w>v<cr>|<cmd>:term build_release.bat<cr>i", { desc = "[B]uild [R]elease" })
+    vim.keymap.set("n", "<leader>bs", "<C-w>v<cr>|<cmd>:term post_build.bat<cr>i", { desc = "[B]uild [S]haders" })
     vim.keymap.set("n", "<leader>bc", "<C-w>v<cr>|<cmd>:term clean.bat<cr>i", { desc = "[B]uild->[C]lean" })
 else
-    vim.keymap.set("n", "<leader>bd", "<C-w>v<cr>|<cmd>:term ./build-debug.sh<cr>i", { desc = "[B]uild [D]ebug" })
-    vim.keymap.set("n", "<leader>br", "<C-w>v<cr>|<cmd>:term ./build-release.sh<cr>i", { desc = "[B]uild [R]elease" })
+    vim.keymap.set("n", "<leader>bd", "<C-w>v<cr>|<cmd>:term ./build_debug.sh<cr>i", { desc = "[B]uild [D]ebug" })
+    vim.keymap.set("n", "<leader>br", "<C-w>v<cr>|<cmd>:term ./build_release.sh<cr>i", { desc = "[B]uild [R]elease" })
     vim.keymap.set("n", "<leader>bc", "<C-w>v<cr>|<cmd>:term ./clean.sh<cr>i", { desc = "[B]uild->[C]lean" })
+    vim.keymap.set("n", "<leader>bs", "<C-w>v<cr>|<cmd>:term ./post_build.sh<cr>i", { desc = "[B]uild [S]haders" })
     vim.keymap.set("n", "<leader>faf",
         "<C-w>v<cr>|<cmd>:term find . -regex '.*\\.\\(cpp\\|hpp\\|c\\|h\\|cxx\\)' -exec clang-format -style=file -i {} \\;<cr>i",
         { desc = "[F]ornmat [A]ll [F]iles" })
