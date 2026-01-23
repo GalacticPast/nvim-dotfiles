@@ -4,6 +4,7 @@ vim.opt.relativenumber = true
 vim.opt.background = "dark"
 vim.opt.tabstop = 4
 vim.opt.cursorline = true
+vim.opt.mouse = ""
 
 vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
