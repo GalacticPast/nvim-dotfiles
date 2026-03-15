@@ -10,6 +10,7 @@ require("lazy").setup({
   { "ellisonleao/gruvbox.nvim", priority = 1000 },
   { "neovim/nvim-lspconfig" }, -- Provides server definitions
   { "lervag/vimtex", lazy = false },
+  { "nvim-tree/nvim-web-devicons" },
   { "nvim-tree/nvim-tree.lua" },
   { 
     "nvim-telescope/telescope.nvim", 
@@ -188,5 +189,4 @@ k("n", "<leader>bc", function() run_build_task("clean") end)
 k("n", "<leader>cc", "<cmd>cclose<cr>", { desc = "[C]lose [C]quickfix" })
 
 require("nvim-tree").setup({
-  renderer = { icons = { show = { file = false, folder = false, git = false } } }
 })
