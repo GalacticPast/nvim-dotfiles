@@ -60,6 +60,10 @@ vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.updatetime = 250
 vim.opt.hidden = true -- Allows switching buffers without saving
+
+vim.g.vimtex_view_method = "zathura"
+
+
 local k = vim.keymap.set
 
 k("n", "<C-h>", "<C-w>h")
