@@ -11,7 +11,10 @@ require("lazy").setup({
   { "neovim/nvim-lspconfig" }, -- Provides server definitions
   { "lervag/vimtex", lazy = false },
   { "nvim-tree/nvim-web-devicons" },
+  {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
   { "nvim-tree/nvim-tree.lua" },
+  {"mbbill/undotree"},
+  {"stevearc/conform.nvim"},
   { 
     "nvim-telescope/telescope.nvim", 
     dependencies = { "nvim-lua/plenary.nvim" },
@@ -31,7 +34,7 @@ require("gruvbox").setup({
     },
 })
 vim.opt.termguicolors = true
-vim.cmd("colorscheme gruvbox")
+vim.cmd("colorscheme moonfly")
 
 vim.g.mapleader = " "
 vim.opt.guicursor = ""
@@ -85,9 +88,8 @@ k("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 k("x", "<leader>p", [["_dP]])
 k({ "n", "v" }, "<leader>y", [["+y]])
 k("n", "<leader>Y", [["+Y]])
-k("n", "<space>e", "<cmd>lua vim.diagnostic.open_float()<CR>")
 k("n", "<leader>rw", "*``cgn", { desc = "Replace word under cursor" })
-
+k('n', '<leader>u', vim.cmd.UndotreeToggle)
 
 k("n", "<leader>gm", function()
     vim.o.background = (vim.o.background == "dark") and "light" or "dark"
@@ -96,9 +98,63 @@ k("n", "<leader>gm", function()
 end)
 
 
-k("n", "<leader>f", function()
-    vim.lsp.buf.format { async = true }
+require("conform").setup({
+  formatters_by_ft = {
+    -- Remove the double curly braces and list them normally
+    javascript = { "prettierd", "prettier" },
+    javascriptreact = { "prettierd", "prettier" },
+    typescript = { "prettierd", "prettier" },
+    typescriptreact = { "prettierd", "prettier" },
+  },
+  format_on_save = {
+    stop_after_first = true, 
+    lsp_fallback = true,
+    timeout_ms = 1000,
+  },
+})
+
+-- Update your keybinding to also use the new option
+vim.keymap.set("n", "<leader>f", function()
+  require("conform").format({
+    stop_after_first = true,
+    lsp_fallback = true,
+    async = true,
+  })
 end, { desc = "Format Buffer" })
+
+function _G.toggle_diagnostic_qf()
+    local qf_winid = nil
+    
+    -- 1. Find if a Quickfix window is already open anywhere
+    for _, win in pairs(vim.fn.getwininfo()) do
+        if win.quickfix == 1 then
+            qf_winid = win.winid
+            break
+        end
+    end
+
+    if qf_winid then
+        -- If it exists, close it
+        vim.fn.setqflist({}, 'r')
+        vim.api.nvim_win_close(qf_winid, true)
+    else
+        local current_width = vim.api.nvim_win_get_width(0)
+        local half_width = math.floor(current_width / 2)
+        -- 2. Populate the list but DO NOT open the window yet
+        vim.diagnostic.setqflist({ open = false })
+        
+        -- 3. Check if there are actually any diagnostics to show
+        if #vim.fn.getqflist() == 0 then
+            vim.notify("No diagnostics found", vim.log.levels.INFO)
+            return
+        end
+
+        -- 4. Open the quickfix window
+        vim.cmd("copen")
+        vim.cmd("wincmd p")
+    end
+end
+
 function _G.definition_split()
   vim.lsp.buf.definition({
     on_list = function(options)
@@ -145,7 +201,17 @@ vim.api.nvim_create_autocmd('LspAttach', {
         local opts = { buffer = ev.buf }
         k("n", "gd", _G.definition_split, opts) -- Your custom split-right jump
         k({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
-        k("n", "<space>e", vim.diagnostic.open_float, opts)
+        k("n", "<space>e", _G.toggle_diagnostic_qf, opts)  
+        k("n", "<space>ne", function()
+            local ok, _ = pcall(vim.cmd, "cnext")
+            if ok then vim.cmd("normal! zz") end -- Center screen after jump
+        end, opts)
+
+        -- Previous Error: Tries :cprev, does nothing if at the start
+        k("n", "<space>pe", function()
+            local ok, _ = pcall(vim.cmd, "cprev")
+            if ok then vim.cmd("normal! zz") end -- Center screen after jump
+        end, opts)
     end,
 })
 
