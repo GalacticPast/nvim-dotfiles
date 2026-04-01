@@ -6,12 +6,13 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+
 require("lazy").setup({
   { "ellisonleao/gruvbox.nvim", priority = 1000 },
+  {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
   { "neovim/nvim-lspconfig" }, -- Provides server definitions
   { "lervag/vimtex", lazy = false },
   { "nvim-tree/nvim-web-devicons" },
-  {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
   { "nvim-tree/nvim-tree.lua" },
   {"mbbill/undotree"},
   {"stevearc/conform.nvim"},
@@ -20,19 +21,14 @@ require("lazy").setup({
     dependencies = { "nvim-lua/plenary.nvim" },
     cmd = "Telescope" 
   },
+  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" }, 
+  { "nvim-treesitter/nvim-treesitter-context" },             
+  {
+      "folke/todo-comments.nvim",
+      dependencies = { "nvim-lua/plenary.nvim" },
+  }
 })
 
-require("gruvbox").setup({ 
-    contrast = "soft",
-    inverse = true,
-    palette_overrides = {},
-    overrides = {
-        -- This forces comments to be Green (#b8bb26) and removes Italics if preferred
-        Comment = { fg = "#b8bb26", italic = true },
-        -- Optional: Also make LSP "hint" comments or documentation green
-        ["@comment"] = { fg = "#b8bb26" },
-    },
-})
 vim.opt.termguicolors = true
 vim.cmd("colorscheme moonfly")
 
@@ -97,6 +93,56 @@ k("n", "<leader>gm", function()
     vim.opt.guicursor = ""
 end)
 
+require("nvim-treesitter.config").setup {
+  ensure_installed = { "c", "cpp"}, -- Only install what you need
+  highlight = { enable = true },
+}
+
+require("treesitter-context").setup{
+  enable = true,            -- Enable this plugin
+  max_lines = 3,            -- How many lines the window should span. Values <= 0 mean no limit.
+  min_window_height = 0,    -- Minimum editor window height to enable context.
+  line_numbers = true,
+  multiline_threshold = 20, -- Maximum number of lines to show for a single context
+  trim_scope = 'outer',     -- Which context lines to discard if `max_lines` is exceeded.
+  mode = 'cursor',          -- Line used to calculate context. Can be 'cursor' or 'topline'.
+}
+
+require("todo-comments").setup({
+    keywords = {
+        FIX      = { icon = " ", color = "error"   , alt = {"fix"} },
+        TODO     = { icon = " ", color = "info"    , alt = {"todo"} },
+        HACK     = { icon = " ", color = "warning" , alt = {"hack"} },
+        WARN     = { icon = " ", color = "warning" , alt = {"warn"} },
+        PERF     = { icon = " ", color = "default" , alt = {"perf"} },
+        NOTE     = { icon = " ", color = "hint"    , alt = {"note", "info"} },
+        TEST     = { icon = "⏲ ", color = "test"    , alt = {"test"} },
+        REFACTOR = { icon = " ", color = "warning" , alt = {"refactor"} },
+    },
+
+    highlight = {
+        pattern = [[.*<(KEYWORDS)\s*:]], -- pattern or table of patterns, used for highlighting (vim regex)
+        comments_only = true,
+    },
+
+    search = {
+        pattern = [[\b(KEYWORDS):]], -- ripgrep regex
+    },
+})
+
+
+
+require("gruvbox").setup({ 
+    contrast = "soft",
+    inverse = true,
+    palette_overrides = {},
+    overrides = {
+        -- This forces comments to be Green (#b8bb26) and removes Italics if preferred
+        Comment = { fg = "#b8bb26", italic = true },
+        -- Optional: Also make LSP "hint" comments or documentation green
+        ["@comment"] = { fg = "#b8bb26" },
+    },
+})
 
 require("conform").setup({
   formatters_by_ft = {
