@@ -8,35 +8,34 @@ vim.opt.rtp:prepend(lazypath)
 
 
 require("lazy").setup({
-  { "ellisonleao/gruvbox.nvim", priority = 1000 },
-  {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
-  { "neovim/nvim-lspconfig" }, -- Provides server definitions
-  { "lervag/vimtex", lazy = false },
-  { "nvim-tree/nvim-web-devicons" },
-  { "nvim-tree/nvim-tree.lua" },
-  {"mbbill/undotree"},
-  {"stevearc/conform.nvim"},
-  { 
-    "nvim-telescope/telescope.nvim", 
-    dependencies = { "nvim-lua/plenary.nvim" },
-    cmd = "Telescope" 
-  },
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" }, 
-  { "nvim-treesitter/nvim-treesitter-context" },             
-  {
-      "folke/todo-comments.nvim",
-      dependencies = { "nvim-lua/plenary.nvim" },
-  }
+    { "ellisonleao/gruvbox.nvim", priority = 1000 },
+    {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
+    { "neovim/nvim-lspconfig" }, -- Provides server definitions
+    { "lervag/vimtex", lazy = false },
+    { 'nvim-mini/mini.icons', version = false },
+    {"stevearc/oil.nvim", lazy = false},
+    {"mbbill/undotree"},
+    {"stevearc/conform.nvim"},
+    { 
+        "nvim-telescope/telescope.nvim", 
+        dependencies = { "nvim-lua/plenary.nvim" },
+        cmd = "Telescope" 
+    },
+    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" }, 
+    { "nvim-treesitter/nvim-treesitter-context" },             
+    {
+        "folke/todo-comments.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+    }
 })
 
 vim.opt.termguicolors = true
-vim.cmd("colorscheme moonfly")
 
 vim.g.mapleader = " "
 vim.opt.guicursor = ""
 vim.opt.nu = true
 vim.opt.relativenumber = true
-vim.opt.background = "dark"
+vim.opt.background = "light"
 vim.opt.tabstop = 4
 vim.opt.cursorline = true
 vim.opt.mouse = ""
@@ -58,7 +57,6 @@ vim.opt.scrolloff = 8
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.updatetime = 250
-vim.opt.hidden = true -- Allows switching buffers without saving
 
 vim.g.vimtex_view_method = "zathura"
 
@@ -75,7 +73,7 @@ k("n", "<C-d>", "<C-d>zz")
 k("n", "<C-u>", "<C-u>zz")
 k("x", "<leader>p", [["_dP]])
 k({ "n", "v" }, "<leader>y", [["+y]])
-k("n", "<leader>pv", "<cmd>NvimTreeToggle<CR>")
+k("n", "<leader>pv", "<CMD>Oil<CR>", { desc = "Open parent directory" })
 
 k("n", "<leader>pf", "<cmd>Telescope find_files<CR>")
 k("n", "<leader>fw", "<cmd>Telescope live_grep<CR>")
@@ -86,12 +84,6 @@ k({ "n", "v" }, "<leader>y", [["+y]])
 k("n", "<leader>Y", [["+Y]])
 k("n", "<leader>rw", "*``cgn", { desc = "Replace word under cursor" })
 k('n', '<leader>u', vim.cmd.UndotreeToggle)
-
-k("n", "<leader>gm", function()
-    vim.o.background = (vim.o.background == "dark") and "light" or "dark"
-    vim.cmd("colorscheme gruvbox")
-    vim.opt.guicursor = ""
-end)
 
 require("nvim-treesitter.config").setup {
   ensure_installed = { "c", "cpp"}, -- Only install what you need
@@ -108,7 +100,33 @@ require("treesitter-context").setup{
   mode = 'cursor',          -- Line used to calculate context. Can be 'cursor' or 'topline'.
 }
 
+require("gruvbox").setup({
+  terminal_colors = true, -- add neovim terminal colors
+  undercurl = true,
+  underline = true,
+  bold = true,
+  italic = {
+    strings = true,
+    emphasis = true,
+    comments = true,
+    operators = false,
+    folds = true,
+  },
+  strikethrough = true,
+  invert_selection = false,
+  invert_signs = false,
+  invert_tabline = false,
+  inverse = true, -- invert background for search, diffs, statuslines and errors
+  contrast = "", -- can be "hard", "soft" or empty string
+  palette_overrides = {},
+  overrides = {},
+  dim_inactive = false,
+  transparent_mode = false,
+})
+vim.cmd("colorscheme gruvbox")
+
 require("todo-comments").setup({
+
     keywords = {
         FIX      = { icon = " ", color = "error"   , alt = {"fix"} },
         TODO     = { icon = " ", color = "info"    , alt = {"todo"} },
@@ -131,18 +149,6 @@ require("todo-comments").setup({
 })
 
 
-
-require("gruvbox").setup({ 
-    contrast = "soft",
-    inverse = true,
-    palette_overrides = {},
-    overrides = {
-        -- This forces comments to be Green (#b8bb26) and removes Italics if preferred
-        Comment = { fg = "#b8bb26", italic = true },
-        -- Optional: Also make LSP "hint" comments or documentation green
-        ["@comment"] = { fg = "#b8bb26" },
-    },
-})
 
 require("conform").setup({
   formatters_by_ft = {
@@ -169,36 +175,20 @@ vim.keymap.set("n", "<leader>f", function()
 end, { desc = "Format Buffer" })
 
 function _G.toggle_diagnostic_qf()
-    local qf_winid = nil
-    
-    -- 1. Find if a Quickfix window is already open anywhere
-    for _, win in pairs(vim.fn.getwininfo()) do
-        if win.quickfix == 1 then
-            qf_winid = win.winid
-            break
-        end
-    end
+    local current_width = vim.api.nvim_win_get_width(0)
+    local half_width = math.floor(current_width / 2)
+    -- 2. Populate the list but DO NOT open the window yet
+    vim.diagnostic.setqflist({ open = false })
 
-    if qf_winid then
-        -- If it exists, close it
-        vim.fn.setqflist({}, 'r')
-        vim.api.nvim_win_close(qf_winid, true)
-    else
-        local current_width = vim.api.nvim_win_get_width(0)
-        local half_width = math.floor(current_width / 2)
-        -- 2. Populate the list but DO NOT open the window yet
-        vim.diagnostic.setqflist({ open = false })
-        
-        -- 3. Check if there are actually any diagnostics to show
-        if #vim.fn.getqflist() == 0 then
-            vim.notify("No diagnostics found", vim.log.levels.INFO)
-            return
-        end
-
-        -- 4. Open the quickfix window
-        vim.cmd("copen")
-        vim.cmd("wincmd p")
+    -- 3. Check if there are actually any diagnostics to show
+    if #vim.fn.getqflist() == 0 then
+        vim.notify("No diagnostics found", vim.log.levels.INFO)
+        return
     end
+    -- 4. Open the quickfix window
+    vim.cmd("vertical leftabove copen");
+    vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
+    vim.cmd("wincmd p")
 end
 
 function _G.definition_split()
@@ -210,20 +200,19 @@ function _G.definition_split()
         vim.notify("Multiple items found, opening first one", vim.log.levels.WARN)
       end
 
-      local item = options.items[1]
-      local wins = vim.api.nvim_tabpage_list_wins(0)
-      
-      if #wins > 1 then
-        -- Move to the right-most window and overwrite
-        vim.cmd("wincmd l")
-        vim.cmd("w");
-        vim.cmd("edit +" .. item.lnum .. " " .. item.filename)
-      else
-        -- Create a new split to the RIGHT
+      local item = options.items[1];
+
+      local curr_split = vim.api.nvim_win_get_buf(0);
+      vim.cmd("wincmd l");
+      vim.cmd("w");
+      local possible_right_split = vim.api.nvim_win_get_buf(0);
+    
+      if curr_split == possible_right_split then
         vim.cmd("botright vsplit +" .. item.lnum .. " " .. item.filename)
+      else
+        vim.cmd("edit +" .. item.lnum .. " " .. item.filename)
       end
-      
-      -- Set column and center
+
       vim.api.nvim_win_set_cursor(0, {item.lnum, item.col - 1})
       vim.cmd("normal! zz")
     end,
@@ -287,16 +276,9 @@ local function run_build_task(task)
 
     vim.opt.makeprg = cmd
     vim.cmd("silent make!")
-
-    if #vim.fn.getqflist() > 0 then
-        vim.cmd("cclose")
-        vim.cmd("vertical leftabove copen")
-        vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
-        vim.cmd("wincmd p")
-    else
-        vim.cmd("cclose")
-        print("Done: " .. task .. " ✨")
-    end
+    vim.cmd("vertical leftabove copen")
+    vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
+    vim.cmd("wincmd p")
 end
 
 k("n", "<leader>bd", function() run_build_task("debug") end)
@@ -304,5 +286,13 @@ k("n", "<leader>br", function() run_build_task("release") end)
 k("n", "<leader>bc", function() run_build_task("clean") end)
 k("n", "<leader>cc", "<cmd>cclose<cr>", { desc = "[C]lose [C]quickfix" })
 
-require("nvim-tree").setup({
+require('mini.icons').setup()
+
+require("oil").setup({
+    columns = {
+        "icon",
+        -- "permissions",
+        -- "size",
+        -- "mtime",
+    },
 })
