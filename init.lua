@@ -10,7 +10,10 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
     { "ellisonleao/gruvbox.nvim", priority = 1000 },
     {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
-    { "neovim/nvim-lspconfig" }, -- Provides server definitions
+    { "neovim/nvim-lspconfig",
+	    dependencies = {{ 'williamboman/mason.nvim', config = true },
+		    	      'williamboman/mason-lspconfig.nvim'},
+    }, -- Provides server definitions
     { "lervag/vimtex", lazy = false },
     { 'nvim-mini/mini.icons', version = false },
     {"stevearc/oil.nvim", lazy = false},
@@ -35,7 +38,7 @@ vim.g.mapleader = " "
 vim.opt.guicursor = ""
 vim.opt.nu = true
 vim.opt.relativenumber = true
-vim.opt.background = "light"
+vim.opt.background = "dark"
 vim.opt.tabstop = 4
 vim.opt.cursorline = true
 vim.opt.mouse = ""
@@ -86,7 +89,7 @@ k("n", "<leader>rw", "*``cgn", { desc = "Replace word under cursor" })
 k('n', '<leader>u', vim.cmd.UndotreeToggle)
 
 require("nvim-treesitter.config").setup {
-  ensure_installed = { "c", "cpp"}, -- Only install what you need
+  ensure_installed = { "c", "cpp", "go"}, -- Only install what you need
   highlight = { enable = true },
 }
 
@@ -117,7 +120,7 @@ require("gruvbox").setup({
   invert_signs = false,
   invert_tabline = false,
   inverse = true, -- invert background for search, diffs, statuslines and errors
-  contrast = "", -- can be "hard", "soft" or empty string
+  contrast = "soft", -- can be "hard", "soft" or empty string
   palette_overrides = {},
   overrides = {},
   dim_inactive = false,
@@ -174,78 +177,99 @@ vim.keymap.set("n", "<leader>f", function()
   })
 end, { desc = "Format Buffer" })
 
-function _G.toggle_diagnostic_qf()
+-- 1. Setup keymap alias
+local k = vim.keymap.set
+
+-- 2. Custom Functions (Made 'local' instead of '_G' to keep the global namespace clean)
+local function toggle_diagnostic_qf()
     local current_width = vim.api.nvim_win_get_width(0)
-    local half_width = math.floor(current_width / 2)
-    -- 2. Populate the list but DO NOT open the window yet
+    -- clear the list first
+    vim.fn.setqflist({}, 'f') 
+    -- Populate the list but DO NOT open the window yet
     vim.diagnostic.setqflist({ open = false })
 
-    -- 3. Check if there are actually any diagnostics to show
+    -- Check if there are actually any diagnostics to show
     if #vim.fn.getqflist() == 0 then
         vim.notify("No diagnostics found", vim.log.levels.INFO)
         return
     end
-    -- 4. Open the quickfix window
-    vim.cmd("vertical leftabove copen");
+    
+    -- Open the quickfix window
+    vim.cmd("vertical leftabove copen")
     vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
     vim.cmd("wincmd p")
 end
 
-function _G.definition_split()
-  vim.lsp.buf.definition({
-    on_list = function(options)
-      if not options or #options.items == 0 then return end
-      
-      if #options.items > 1 then
-        vim.notify("Multiple items found, opening first one", vim.log.levels.WARN)
-      end
+local function definition_split()
+    vim.lsp.buf.definition({
+        on_list = function(options)
+            if not options or #options.items == 0 then return end
+            
+            if #options.items > 1 then
+                vim.notify("Multiple items found, opening first one", vim.log.levels.WARN)
+            end
 
-      local item = options.items[1];
+            local item = options.items[1]
+            local curr_split = vim.api.nvim_win_get_buf(0)
+            
+            vim.cmd("wincmd l")
+            local possible_right_split = vim.api.nvim_win_get_buf(0)
+            
+            if curr_split == possible_right_split then
+                vim.cmd("botright vsplit +" .. item.lnum .. " " .. item.filename)
+            else
+                vim.cmd("edit +" .. item.lnum .. " " .. item.filename)
+            end
 
-      local curr_split = vim.api.nvim_win_get_buf(0);
-      vim.cmd("wincmd l");
-      vim.cmd("w");
-      local possible_right_split = vim.api.nvim_win_get_buf(0);
-    
-      if curr_split == possible_right_split then
-        vim.cmd("botright vsplit +" .. item.lnum .. " " .. item.filename)
-      else
-        vim.cmd("edit +" .. item.lnum .. " " .. item.filename)
-      end
-
-      vim.api.nvim_win_set_cursor(0, {item.lnum, item.col - 1})
-      vim.cmd("normal! zz")
-    end,
-  })
+            vim.api.nvim_win_set_cursor(0, {item.lnum, item.col - 1})
+            vim.cmd("normal! zz")
+        end,
+    })
 end
 
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = { 'c', 'cpp' },
-    callback = function(args)
-        local root = vim.fs.root(args.buf, { 'compile_flags.txt', '.git' })
-        vim.lsp.start({
-            name = 'clangd',
-            cmd = { 'clangd', '--background-index', '--header-insertion=never' },
-            root_dir = root or vim.uv.cwd(),
-        })
-    end,
-})
+-- 3. Define all your Language Servers here
+-- To add a new language, just add its config to this table!
+local servers = {
+    -- Go
+    gopls = {
+        cmd = { 'gopls' },
+        filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
+        root_markers = { 'go.work', 'go.mod', '.git' },
+    },
+    -- C / C++
+    clangd = {
+        cmd = { 'clangd', '--background-index', '--header-insertion=never' },
+        filetypes = { 'c', 'cpp', 'objc', 'objcpp' },
+        root_markers = { 'compile_flags.txt', 'compile_commands.json', '.git' },
+    },
+    -- Examples of how easy it is to add more:
+    -- pyright = { root_markers = { 'pyproject.toml', '.git' } },
+    -- ts_ls = { root_markers = { 'package.json', '.git' } },
+}
 
+-- 4. Generic Loop to configure and enable all servers
+for name, config in pairs(servers) do
+    vim.lsp.config(name, config)
+    vim.lsp.enable(name)
+end
+
+-- 5. Attach Keymaps globally whenever ANY language server attaches
 vim.api.nvim_create_autocmd('LspAttach', {
     callback = function(ev)
         local opts = { buffer = ev.buf }
-        k("n", "gd", _G.definition_split, opts) -- Your custom split-right jump
+        
+        k("n", "gd", definition_split, opts) -- Your custom split-right jump
         k({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
-        k("n", "<space>e", _G.toggle_diagnostic_qf, opts)  
+        k("n", "<space>e", toggle_diagnostic_qf, opts)  
+        
         k("n", "<space>ne", function()
             local ok, _ = pcall(vim.cmd, "cnext")
-            if ok then vim.cmd("normal! zz") end -- Center screen after jump
+            if ok then vim.cmd("normal! zz") end
         end, opts)
 
-        -- Previous Error: Tries :cprev, does nothing if at the start
         k("n", "<space>pe", function()
             local ok, _ = pcall(vim.cmd, "cprev")
-            if ok then vim.cmd("normal! zz") end -- Center screen after jump
+            if ok then vim.cmd("normal! zz") end
         end, opts)
     end,
 })
