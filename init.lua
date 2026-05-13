@@ -6,24 +6,29 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-
 require("lazy").setup({
     { "ellisonleao/gruvbox.nvim", priority = 1000 },
     {"bluz71/vim-moonfly-colors", priority = 1000, name = "moonfly"},
     { "neovim/nvim-lspconfig",
-	    dependencies = {{ 'williamboman/mason.nvim', config = true },
-		    	      'williamboman/mason-lspconfig.nvim'},
+        dependencies = {{ 'williamboman/mason.nvim', config = true },
+                      'williamboman/mason-lspconfig.nvim'},
     }, -- Provides server definitions
     { "lervag/vimtex", lazy = false },
     { 'nvim-mini/mini.icons', version = false },
     {"stevearc/oil.nvim", lazy = false},
     {"mbbill/undotree"},
     {"stevearc/conform.nvim"},
+    
+    -- Install fff.nvim here, configure it outside later
     { 
-        "nvim-telescope/telescope.nvim", 
-        dependencies = { "nvim-lua/plenary.nvim" },
-        cmd = "Telescope" 
+        'dmtrKovalenko/fff.nvim',
+        build = function()
+            -- Automatically downloads a prebuilt binary or falls back to building via Cargo
+            require("fff.download").download_or_build_binary()
+        end,
+        lazy = false, -- The plugin needs to initialize itself on startup
     },
+    
     { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" }, 
     { "nvim-treesitter/nvim-treesitter-context" },             
     {
@@ -51,7 +56,7 @@ vim.opt.wrap = false
 
 vim.opt.swapfile = false
 vim.opt.backup = false
-vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+vim.opt.undodir = "C:\\Users\\family\\AppData\\Roaming\\nvim-temp" 
 vim.opt.undofile = true
 
 vim.opt.termguicolors = true
@@ -78,8 +83,6 @@ k("x", "<leader>p", [["_dP]])
 k({ "n", "v" }, "<leader>y", [["+y]])
 k("n", "<leader>pv", "<CMD>Oil<CR>", { desc = "Open parent directory" })
 
-k("n", "<leader>pf", "<cmd>Telescope find_files<CR>")
-k("n", "<leader>fw", "<cmd>Telescope live_grep<CR>")
 k("n", "<leader><leader>", "<cmd>noh<CR>")
 k("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 k("x", "<leader>p", [["_dP]])
@@ -87,6 +90,27 @@ k({ "n", "v" }, "<leader>y", [["+y]])
 k("n", "<leader>Y", [["+Y]])
 k("n", "<leader>rw", "*``cgn", { desc = "Replace word under cursor" })
 k('n', '<leader>u', vim.cmd.UndotreeToggle)
+
+-- ==========================================
+-- PLUGIN SETUPS (Outside of lazy.nvim)
+-- ==========================================
+
+-- fff.nvim Setup & Keymaps
+require("fff").setup({
+    max_results = 100,
+    frecency = {
+        enabled = true,
+    },
+    git = {
+        status_text_color = true, -- Apply git status colors to files
+    }
+})
+
+k("n", "<leader>pf", function() require('fff').find_files() end, { desc = 'Find files (fff)' })
+k("n", "<leader>fw", function() require('fff').live_grep() end, { desc = 'Live grep (fff)' })
+k("n", "fz", function() require('fff').live_grep({ grep = { modes = { 'fuzzy', 'plain' } } }) end, { desc = 'Live fuzzy grep' })
+k("n", "fc", function() require('fff').live_grep({ query = vim.fn.expand("<cword>") }) end, { desc = 'Search current word' })
+
 
 require("nvim-treesitter.config").setup {
   ensure_installed = { "c", "cpp", "go"}, -- Only install what you need
@@ -129,7 +153,6 @@ require("gruvbox").setup({
 vim.cmd("colorscheme gruvbox")
 
 require("todo-comments").setup({
-
     keywords = {
         FIX      = { icon = " ", color = "error"   , alt = {"fix"} },
         TODO     = { icon = " ", color = "info"    , alt = {"todo"} },
@@ -140,22 +163,17 @@ require("todo-comments").setup({
         TEST     = { icon = "⏲ ", color = "test"    , alt = {"test"} },
         REFACTOR = { icon = " ", color = "warning" , alt = {"refactor"} },
     },
-
     highlight = {
         pattern = [[.*<(KEYWORDS)\s*:]], -- pattern or table of patterns, used for highlighting (vim regex)
         comments_only = true,
     },
-
     search = {
         pattern = [[\b(KEYWORDS):]], -- ripgrep regex
     },
 })
 
-
-
 require("conform").setup({
   formatters_by_ft = {
-    -- Remove the double curly braces and list them normally
     javascript = { "prettierd", "prettier" },
     javascriptreact = { "prettierd", "prettier" },
     typescript = { "prettierd", "prettier" },
@@ -168,7 +186,7 @@ require("conform").setup({
   },
 })
 
--- Update your keybinding to also use the new option
+-- Format keybinding
 vim.keymap.set("n", "<leader>f", function()
   require("conform").format({
     stop_after_first = true,
@@ -177,24 +195,17 @@ vim.keymap.set("n", "<leader>f", function()
   })
 end, { desc = "Format Buffer" })
 
--- 1. Setup keymap alias
-local k = vim.keymap.set
-
--- 2. Custom Functions (Made 'local' instead of '_G' to keep the global namespace clean)
+-- 1. Custom Functions
 local function toggle_diagnostic_qf()
     local current_width = vim.api.nvim_win_get_width(0)
-    -- clear the list first
     vim.fn.setqflist({}, 'f') 
-    -- Populate the list but DO NOT open the window yet
     vim.diagnostic.setqflist({ open = false })
 
-    -- Check if there are actually any diagnostics to show
     if #vim.fn.getqflist() == 0 then
         vim.notify("No diagnostics found", vim.log.levels.INFO)
         return
     end
     
-    -- Open the quickfix window
     vim.cmd("vertical leftabove copen")
     vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
     vim.cmd("wincmd p")
@@ -227,38 +238,32 @@ local function definition_split()
     })
 end
 
--- 3. Define all your Language Servers here
--- To add a new language, just add its config to this table!
+-- 2. Define all your Language Servers here
 local servers = {
-    -- Go
     gopls = {
         cmd = { 'gopls' },
         filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
         root_markers = { 'go.work', 'go.mod', '.git' },
     },
-    -- C / C++
     clangd = {
         cmd = { 'clangd', '--background-index', '--header-insertion=never' },
         filetypes = { 'c', 'cpp', 'objc', 'objcpp' },
         root_markers = { 'compile_flags.txt', 'compile_commands.json', '.git' },
     },
-    -- Examples of how easy it is to add more:
-    -- pyright = { root_markers = { 'pyproject.toml', '.git' } },
-    -- ts_ls = { root_markers = { 'package.json', '.git' } },
 }
 
--- 4. Generic Loop to configure and enable all servers
+-- 3. Generic Loop to configure and enable all servers
 for name, config in pairs(servers) do
     vim.lsp.config(name, config)
     vim.lsp.enable(name)
 end
 
--- 5. Attach Keymaps globally whenever ANY language server attaches
+-- 4. Attach Keymaps globally whenever ANY language server attaches
 vim.api.nvim_create_autocmd('LspAttach', {
     callback = function(ev)
         local opts = { buffer = ev.buf }
         
-        k("n", "gd", definition_split, opts) -- Your custom split-right jump
+        k("n", "gd", definition_split, opts) 
         k({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
         k("n", "<space>e", toggle_diagnostic_qf, opts)  
         
@@ -274,10 +279,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
     end,
 })
 
+-- 5. Build Tasks
 local function run_build_task(task)
     local is_windows = vim.fn.has("win32") == 1
     
-    -- Priority check for debug task to support build.sh/bat fallbacks
     local cmd = nil
     if task == "debug" then
         local candidates = is_windows and {"build_debug.bat", "build.bat"} or {"./build_debug.sh", "./build.sh"}
@@ -294,17 +299,44 @@ local function run_build_task(task)
     end
 
     if not cmd or vim.fn.filereadable(cmd) == 0 then 
-        print("Script not found: " .. (cmd or task))
+        vim.notify("Script not found: " .. (cmd or task), vim.log.levels.WARN)
         return 
     end
 
-    vim.opt.makeprg = cmd
-    vim.cmd("silent make!")
-    vim.cmd("vertical leftabove copen")
-    vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
-    vim.cmd("wincmd p")
-end
+    vim.notify("Running " .. cmd .. "...", vim.log.levels.INFO)
 
+    -- Force cmd.exe on Windows to avoid PowerShell redirection errors
+    local exec_cmd = is_windows and ("cmd.exe /c " .. cmd) or cmd
+    
+    -- Run the command asynchronously (prevents UI freeze on long builds)
+    vim.fn.jobstart(exec_cmd, {
+        stdout_buffered = true,
+        stderr_buffered = true,
+        on_exit = function(_, exit_code)
+            if exit_code == 0 then
+                vim.notify("Build completed successfully", vim.log.levels.INFO)
+            else
+                vim.notify("Build failed with code " .. exit_code, vim.log.levels.ERROR)
+            end
+        end,
+        on_stdout = function(_, data)
+            if data and #data > 1 then
+                -- Parse output into the quickfix list using current errorformat
+                vim.fn.setqflist({}, ' ', { title = task .. " build", lines = data })
+                
+                -- Open the quickfix window
+                vim.cmd("vertical leftabove copen")
+                vim.api.nvim_win_set_width(0, math.floor(vim.opt.columns:get() / 2))
+                vim.cmd("wincmd p")
+            end
+        end,
+        on_stderr = function(_, data)
+            if data and #data > 1 then
+                vim.fn.setqflist({}, 'a', { lines = data }) -- append errors
+            end
+        end
+    })
+end
 k("n", "<leader>bd", function() run_build_task("debug") end)
 k("n", "<leader>br", function() run_build_task("release") end)
 k("n", "<leader>bc", function() run_build_task("clean") end)
@@ -315,8 +347,5 @@ require('mini.icons').setup()
 require("oil").setup({
     columns = {
         "icon",
-        -- "permissions",
-        -- "size",
-        -- "mtime",
     },
 })
